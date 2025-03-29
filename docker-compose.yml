@@ -1,0 +1,10 @@
+version: '3'
+services:
+  allorigins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DOMAIN_MAPPINGS=${DOMAIN_MAPPINGS}
+    restart: unless-stopped

@@ -9,9 +9,11 @@ module.exports = (function defaultGot() {
     agent: {
       http: new HttpAgent({
         keepAlive: false,
+        timeout: parseInt(process.env.HTTP_TIMEOUT, 10) || 20000,
       }),
       https: new HttpAgent.HttpsAgent({
         keepAlive: false,
+        timeout: parseInt(process.env.HTTP_TIMEOUT, 10) || 20000,
       }),
     },
     responseType: 'buffer',

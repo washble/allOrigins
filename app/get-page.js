@@ -3,7 +3,39 @@ const iconv = require('iconv-lite')
 
 module.exports = getPage
 
+const DOMAIN_MAPPINGS = (process.env.DOMAIN_MAPPINGS || '')
+  .split(',')
+  .reduce((acc, mapping) => {
+    if (mapping) {
+      // Split by : but handle cases with and without port
+      const parts = mapping.split(':')
+      const domain = parts[0]
+      const ip = parts[1]
+      const port = parts.length > 2 ? parts[2] : null
+      acc[domain] = { ip, port }
+    }
+    return acc
+  }, {})
+
 function getPage({ url, format, requestMethod, charset }) {
+  const urlObj = new URL(url)
+
+  // Check domain mappings
+  const mapping = DOMAIN_MAPPINGS[urlObj.hostname]
+  if (mapping) {
+    console.log(
+      `[Preview Service] Using domain mapping for ${urlObj.hostname}: ${
+        mapping.ip
+      }${mapping.port ? ':' + mapping.port : ''}`,
+    )
+    // Construct new URL using the mapping, only add port if it exists
+    const mappedUrl = `http://${mapping.ip}${
+      mapping.port ? ':' + mapping.port : ''
+    }${urlObj.pathname}${urlObj.search}`
+    url = mappedUrl
+    console.log(`[Preview Service] Mapped URL: ${url}`)
+  }
+
   if (format === 'info' || requestMethod === 'HEAD') {
     return getPageInfo(url)
   } else if (format === 'raw') {
@@ -26,11 +58,12 @@ async function getPageInfo(url) {
 }
 
 async function getRawPage(url, requestMethod, charset) {
+  console.log(`[getRawPage] ${url}`)
   const { content, response, error } = await request(
     url,
     requestMethod,
     true,
-    charset
+    charset,
   )
   if (error) return processError(error)
 
@@ -47,7 +80,7 @@ async function getPageContents(url, requestMethod, charset) {
     url,
     requestMethod,
     false,
-    charset
+    charset,
   )
   if (error) return processError(error)
 
